@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TXT → PDF Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--surface:#161920;--surface2:#1e2230;--border:#2a2f45;
+  --text:#e8e6f5;--muted:#6b7294;--accent:#7c5cfc;--glow:rgba(124,92,252,.25);
+}
+.light{
+  --bg:#f0eff5;--surface:#ffffff;--surface2:#f5f4fc;--border:#ddd8f0;
+  --text:#1a1630;--muted:#8b83b0;--glow:rgba(124,92,252,.12);
+}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;transition:.3s}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* HEADER */
+header{
+  padding:16px 32px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  background:rgba(13,15,20,.92);backdrop-filter:blur(12px);transition:.3s;
+}
+.light header{background:rgba(240,239,245,.92)}
+.logo-box{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#b06cfc);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:0 0 16px var(--glow);
+}
+.logo-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.logo-title span{color:var(--accent)}
+.logo-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+.header-right{display:flex;align-items:center;gap:12px}
+
+/* TABS */
+.tabs{display:flex;background:var(--surface2);border-radius:10px;padding:4px;gap:4px;border:1px solid var(--border)}
+.tab{
+  padding:6px 16px;border-radius:7px;border:none;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:600;
+  background:transparent;color:var(--muted);transition:.2s;
+}
+.tab.active{background:var(--accent);color:#fff}
+.icon-btn{
+  padding:8px 14px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--muted);cursor:pointer;font-size:16px;transition:.2s;
+}
+.icon-btn:hover{border-color:var(--accent)}
+
+/* MAIN */
+main{max-width:920px;margin:0 auto;padding:32px 24px}
+
+/* DROPZONE */
+.dropzone{
+  border:2px dashed var(--border);border-radius:16px;
+  padding:44px 24px;text-align:center;background:var(--surface);
+  cursor:pointer;transition:.2s;
+}
+.dropzone:hover,.dropzone.drag{border-color:var(--accent);background:var(--glow)}
+.drop-icon{font-size:44px;margin-bottom:12px}
+.drop-title{font-weight:700;font-size:16px;margin-bottom:6px}
+.drop-sub{color:var(--muted);font-size:13px}
+.file-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:10px;padding:6px 14px;border-radius:20px;
+  background:rgba(124,92,252,.15);border:1px solid rgba(124,92,252,.3);
+  font-size:13px;font-family:'DM Mono',monospace;color:var(--accent);
+}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+@media(max-width:680px){.grid2{grid-template-columns:1fr}}
+
+/* LABEL */
+.field-label{font-size:11px;font-weight:600;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:.07em;margin-bottom:10px;display:block}
+.sub-label{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between}
+.sub-val{font-family:'DM Mono',monospace;color:var(--accent);font-weight:600}
+
+/* TEXTAREA */
+textarea{
+  width:100%;min-height:220px;padding:14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  color:var(--text);font-size:13px;font-family:'DM Mono',monospace;
+  line-height:1.7;outline:none;resize:vertical;transition:.2s;
+}
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+
+/* INPUT */
+.file-input-wrap{
+  display:flex;align-items:center;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;overflow:hidden;
+}
+.file-input-wrap input{
+  flex:1;padding:10px 14px;background:none;border:none;
+  color:var(--text);font-size:14px;font-family:'DM Mono',monospace;outline:none;
+}
+.file-input-wrap .ext{
+  padding:10px 14px;color:var(--muted);font-size:13px;
+  border-left:1px solid var(--border);font-family:'DM Mono',monospace;
+}
+
+/* PILLS */
+.pills{display:flex;gap:8px}
+.pill{
+  flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;
+  font-size:13px;font-weight:600;cursor:pointer;transition:.2s;text-align:center;
+}
+.pill.active,.pill:hover{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 0 12px var(--glow)}
+
+/* RANGE */
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;border-radius:2px;outline:none}
+.range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace}
+
+/* CONVERT BTN */
+.convert-btn{
+  width:100%;padding:16px;border-radius:14px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#b06cfc);
+  color:#fff;font-size:15px;font-family:'DM Mono',monospace;font-weight:700;
+  letter-spacing:.04em;box-shadow:0 0 20px var(--glow);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:.3s;margin-top:22px;
+}
+.convert-btn:hover:not(:disabled){box-shadow:0 0 36px var(--glow),0 4px 18px rgba(124,92,252,.4);transform:translateY(-1px)}
+.convert-btn:disabled{opacity:.5;cursor:not-allowed}
+.convert-btn.success{background:linear-gradient(135deg,#27ae60,#2ecc71)}
+
+/* SUMMARY */
+.summary{
+  margin-top:16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px 20px;display:flex;gap:28px;flex-wrap:wrap;
+}
+.sum-item .sum-label{font-size:11px;color:var(--muted);margin-bottom:2px}
+.sum-item .sum-val{font-weight:700;font-family:'DM Mono',monospace;font-size:14px}
+
+/* HISTORY */
+.hist-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px}
+.hist-subtitle{color:var(--muted);font-size:13px}
+.hist-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.clear-btn{
+  padding:8px 16px;border-radius:10px;border:1px solid rgba(231,76,60,.3);
+  background:none;color:#e74c3c;cursor:pointer;font-size:13px;font-family:'DM Mono',monospace;transition:.2s;
+}
+.clear-btn:hover{background:rgba(231,76,60,.1)}
+.hist-empty{
+  text-align:center;padding:80px 24px;background:var(--surface);
+  border:1px solid var(--border);border-radius:16px;
+}
+.hist-list{display:flex;flex-direction:column;gap:10px}
+.hist-row{
+  display:flex;align-items:center;gap:16px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;padding:14px 18px;
+  transition:.15s;
+}
+.hist-row:hover{background:var(--surface2)}
+.hist-icon{
+  width:42px;height:42px;border-radius:10px;
+  background:rgba(124,92,252,.15);display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.hist-name{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px}
+.hist-meta{color:var(--muted);font-size:12px;font-family:'DM Mono',monospace}
+.hist-tags{display:flex;gap:6px;flex-shrink:0}
+.tag{
+  font-size:11px;padding:3px 9px;border-radius:6px;
+  background:var(--surface2);border:1px solid var(--border);
+  font-family:'DM Mono',monospace;color:var(--muted);
+}
+
+/* FADE */
+.fade-in{animation:fadeIn .35s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+
+.char-info{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px}
+.preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.clear-text{
+  padding:3px 10px;border-radius:6px;border:1px solid var(--border);
+  background:none;color:var(--muted);font-size:11px;cursor:pointer;transition:.2s;
+}
+.clear-text:hover{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div class="logo-box">📄</div>
+    <div>
+      <div class="logo-title">TXT<span>→</span>PDF</div>
+      <div class="logo-sub">v1.0.0</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('convert',this)">⚡ Konversi</button>
+      <button class="tab" id="hist-tab-btn" onclick="switchTab('history',this)">📜 Riwayat</button>
+    </div>
+    <button class="icon-btn" onclick="toggleDark()" id="theme-btn">☀️</button>
+  </div>
+</header>
+
+<main>
+  <!-- CONVERT TAB -->
+  <div id="tab-convert" class="fade-in">
+
+    <!-- Dropzone -->
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleDrop(event)">
+      <input type="file" id="fileInput" accept=".txt" style="display:none" onchange="handleFileSelect(this)"/>
+      <div class="drop-icon" id="drop-icon">📂</div>
+      <div class="drop-title" id="drop-title">Drag & drop file .txt</div>
+      <div class="drop-sub" id="drop-sub">atau klik untuk memilih file</div>
+      <div id="file-badge" style="display:none" class="file-badge"></div>
+    </div>
+
+    <div class="grid2">
+      <!-- Preview -->
+      <div>
+        <div class="preview-header">
+          <span class="field-label" style="margin-bottom:0">PREVIEW TEKS</span>
+          <button class="clear-text" onclick="clearText()">✕ Hapus</button>
+        </div>
+        <textarea id="textArea" placeholder="Teks akan muncul setelah upload file, atau ketik langsung di sini…"
+          oninput="updateCharCount()"></textarea>
+        <div class="char-info" id="charInfo"></div>
+      </div>
+
+      <!-- Settings -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <span class="field-label">PENGATURAN PDF</span>
+
+        <!-- Filename -->
+        <div>
+          <div class="sub-label">Nama File Output</div>
+          <div class="file-input-wrap">
+            <input type="text" id="fileName" placeholder="nama-dokumen"/>
+            <span class="ext">.pdf</span>
+          </div>
+        </div>
+
+        <!-- Paper -->
+        <div>
+          <div class="sub-label">Ukuran Kertas</div>
+          <div class="pills">
+            <button class="pill active" onclick="selectPaper('A4',this)">A4</button>
+            <button class="pill" onclick="selectPaper('Letter',this)">Letter</button>
+            <button class="pill" onclick="selectPaper('Legal',this)">Legal</button>
+          </div>
+        </div>
+
+        <!-- Margin -->
+        <div>
+          <div class="sub-label">Margin <span id="marginVal" class="sub-val">20mm</span></div>
+          <input type="range" min="5" max="40" value="20" id="marginRange"
+            oninput="document.getElementById('marginVal').textContent=this.value+'mm'"/>
+          <div class="range-labels"><span>5mm</span><span>40mm</span></div>
+        </div>
+
+        <!-- Font size -->
+        <div>
+          <div class="sub-label">Ukuran Font <span id="fontVal" class="sub-val">11pt</span></div>
+          <input type="range" min="8" max="24" value="11" id="fontRange"
+            oninput="document.getElementById('fontVal').textContent=this.value+'pt'"/>
+          <div class="range-labels"><span>8pt</span><span>24pt</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Button -->
+    <button class="convert-btn" id="convertBtn" onclick="convertToPdf()">
+      <span style="font-size:18px">⚡</span> Konversi & Unduh PDF
+    </button>
+
+    <!-- Summary -->
+    <div class="summary" id="summary" style="display:none">
+      <div class="sum-item"><div class="sum-label">📄 Kertas</div><div class="sum-val" id="s-paper">A4</div></div>
+      <div class="sum-item"><div class="sum-label">📏 Margin</div><div class="sum-val" id="s-margin">20mm</div></div>
+      <div class="sum-item"><div class="sum-label">🔤 Font</div><div class="sum-val" id="s-font">11pt</div></div>
+      <div class="sum-item"><div class="sum-label">📊 Karakter</div><div class="sum-val" id="s-chars">0</div></div>
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" style="display:none" class="fade-in">
+    <div class="hist-header">
+      <div>
+        <div class="hist-title">Riwayat Konversi</div>
+        <div class="hist-subtitle" id="hist-count">0 dari 10 tersimpan</div>
+      </div>
+      <button class="clear-btn" onclick="clearHistory()">🗑 Hapus Semua</button>
+    </div>
+    <div id="hist-list"></div>
+  </div>
+</main>
+
+<script>
+const PAPERS = {
+  A4:     {w:210,  h:297},
+  Letter: {w:215.9,h:279.4},
+  Legal:  {w:215.9,h:355.6},
+};
+let currentPaper = 'A4';
+let isDark = true;
+let currentTab = 'convert';
+
+// ─── Theme ───
+function toggleDark(){
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+}
+
+// ─── Tabs ───
+function switchTab(tab, el){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['convert','history'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = t===tab?'block':'none';
+  });
+  if(tab==='history') renderHistory();
+}
+
+// ─── Drop / File ───
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file && file.name.endsWith('.txt')) readFile(file);
+}
+function handleFileSelect(input){
+  const file = input.files[0];
+  if(file) readFile(file);
+}
+function readFile(file){
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const txt = ev.target.result;
+    document.getElementById('textArea').value = txt;
+    document.getElementById('fileName').value = file.name.replace(/\.txt$/i,'');
+    updateDropZone(file.name, file.size, txt.length);
+    updateCharCount();
+    updateSummary();
+  };
+  reader.readAsText(file,'UTF-8');
+}
+function updateDropZone(name, size, chars){
+  document.getElementById('drop-icon').textContent = '✅';
+  document.getElementById('drop-title').textContent = name;
+  document.getElementById('drop-sub').textContent = fmtBytes(size) + ' · ' + chars.toLocaleString('id') + ' karakter';
+  const badge = document.getElementById('file-badge');
+  badge.style.display = 'inline-flex';
+  badge.textContent = '📄 Klik untuk ganti file';
+}
+
+// ─── Text ───
+function clearText(){
+  document.getElementById('textArea').value = '';
+  document.getElementById('drop-icon').textContent = '📂';
+  document.getElementById('drop-title').textContent = 'Drag & drop file .txt';
+  document.getElementById('drop-sub').textContent = 'atau klik untuk memilih file';
+  document.getElementById('file-badge').style.display = 'none';
+  document.getElementById('charInfo').textContent = '';
+  document.getElementById('summary').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+function updateCharCount(){
+  const txt = document.getElementById('textArea').value;
+  const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+  document.getElementById('charInfo').textContent = txt.length ?
+    txt.length.toLocaleString('id') + ' karakter · ~' + words.toLocaleString('id') + ' kata' : '';
+  updateSummary();
+}
+
+// ─── Paper ───
+function selectPaper(p, el){
+  currentPaper = p;
+  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  updateSummary();
+}
+
+// ─── Summary ───
+function updateSummary(){
+  const txt = document.getElementById('textArea').value;
+  const sum = document.getElementById('summary');
+  if(!txt.trim()){sum.style.display='none';return;}
+  sum.style.display = 'flex';
+  document.getElementById('s-paper').textContent = currentPaper;
+  document.getElementById('s-margin').textContent = document.getElementById('marginRange').value + 'mm';
+  document.getElementById('s-font').textContent = document.getElementById('fontRange').value + 'pt';
+  document.getElementById('s-chars').textContent = txt.length.toLocaleString('id');
+}
+
+// ─── Convert ───
+function convertToPdf(){
+  const text = document.getElementById('textArea').value.trim();
+  if(!text) return;
+
+  const btn = document.getElementById('convertBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Mengonversi…';
+
+  setTimeout(()=>{
+    try{
+      const { jsPDF } = window.jspdf;
+      const ps = PAPERS[currentPaper];
+      const margin  = +document.getElementById('marginRange').value;
+      const fsize   = +document.getElementById('fontRange').value;
+      const fname   = (document.getElementById('fileName').value.trim() || 'dokumen') + '.pdf';
+
+      const doc = new jsPDF({unit:'mm', format:[ps.w, ps.h]});
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(fsize);
+
+      const lh = fsize * 0.40;
+      const mw = ps.w - margin * 2;
+      const lines = doc.splitTextToSize(text, mw);
+      const lpp = Math.floor((ps.h - margin*2) / lh);
+
+      for(let i=0;i<lines.length;i++){
+        if(i>0 && i%lpp===0) doc.addPage();
+        doc.text(lines[i], margin, margin + (i%lpp)*lh);
+      }
+      doc.save(fname);
+
+      addHistory({name:fname, chars:text.length, paper:currentPaper, font:fsize, margin});
+      btn.classList.add('success');
+      btn.innerHTML = '✅ PDF Berhasil Diunduh!';
+      setTimeout(()=>{
+        btn.classList.remove('success');
+        btn.innerHTML = '<span style="font-size:18px">⚡</span> Konversi & Unduh PDF';
+        btn.disabled = false;
+      }, 2500);
+    }catch(e){
+      console.error(e);
+      btn.innerHTML = '❌ Terjadi Kesalahan';
+      btn.disabled = false;
+    }
+  }, 500);
+}
+
+// ─── History ───
+function getHistory(){ try{return JSON.parse(localStorage.getItem('txt2pdf_hist')||'[]')}catch{return[]} }
+function saveHistory(h){ localStorage.setItem('txt2pdf_hist', JSON.stringify(h)) }
+function addHistory(entry){
+  const h = [{ id:Date.now(), ts:Date.now(), ...entry }, ...getHistory()].slice(0,10);
+  saveHistory(h);
+  updateHistTab(h.length);
+}
+function clearHistory(){
+  saveHistory([]);
+  updateHistTab(0);
+  renderHistory();
+}
+function updateHistTab(n){
+  document.getElementById('hist-tab-btn').textContent = '📜 Riwayat' + (n>0?` (${n})`:'');
+}
+
+function renderHistory(){
+  const h = getHistory();
+  document.getElementById('hist-count').textContent = h.length + ' dari 10 tersimpan';
+  updateHistTab(h.length);
+  const list = document.getElementById('hist-list');
+  if(!h.length){
+    list.innerHTML = `
+      <div class="hist-empty">
+        <div style="font-size:48px;margin-bottom:16px">📭</div>
+        <div style="font-weight:700;margin-bottom:8px">Belum ada riwayat</div>
+        <div style="color:var(--muted);font-size:14px">Konversi file .txt pertama Anda untuk melihat riwayat di sini.</div>
+      </div>`;
+    return;
+  }
+  list.innerHTML = '<div class="hist-list">' + h.map(it=>`
+    <div class="hist-row">
+      <div class="hist-icon">📄</div>
+      <div style="flex:1;min-width:0">
+        <div class="hist-name">${it.name}</div>
+        <div class="hist-meta">${fmtDate(it.ts)} · ${it.chars.toLocaleString('id')} karakter</div>
+      </div>
+      <div class="hist-tags">
+        <span class="tag">${it.paper}</span>
+        <span class="tag">${it.font}pt</span>
+        <span class="tag">${it.margin}mm</span>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+// ─── Helpers ───
+function fmtBytes(b){
+  if(b<1024) return b+' B';
+  if(b<1048576) return (b/1024).toFixed(1)+' KB';
+  return (b/1048576).toFixed(1)+' MB';
+}
+function fmtDate(ts){
+  return new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+// ─── Init ───
+document.getElementById('marginRange').addEventListener('input', updateSummary);
+document.getElementById('fontRange').addEventListener('input', updateSummary);
+updateHistTab(getHistory().length);
+</script>
+</body>
+</html>
